@@ -1,0 +1,14 @@
+- name: Copy Helm chart to remote node
+  copy:
+    src: "{{ devpi_chart_path }}/"
+    dest: /tmp/devpi_helm/
+    mode: '0755'
+
+- name: Install or upgrade Devpi Helm release
+  kubernetes.core.helm:
+    name: devpi1
+    chart_ref: /tmp/devpi_helm
+    release_namespace: "{{ devpi_namespace }}"
+    create_namespace: false
+    kubeconfig: /home/{{ user }}/.kube/config
+    state: present

@@ -1,0 +1,76 @@
+---
+# ============================================
+# 1. Создаём директорию под сертификаты
+# ============================================
+- name: Ensure certificate directory exists
+  file:
+    path: "{{ devpi_cert_dir }}"
+    state: directory
+    mode: '0755'
+
+# ============================================
+# 2. Генерируем самоподписанный сертификат
+# ============================================
+- name: Generate self-signed TLS certificate for devpi
+  command: >
+    openssl req -x509 -nodes -days {{ devpi_cert_days }}
+    -newkey rsa:2048
+    -keyout {{ devpi_cert_dir }}/devpi.key
+    -out {{ devpi_cert_dir }}/devpi.crt
+    -subj "/CN={{ devpi_domain }}"
+    -addext "subjectAltName=DNS:{{ devpi_domain }},IP:{{ virtualbox_ip }}"
+  args:
+    creates: "{{ devpi_cert_dir }}/devpi.crt"
+
+
+# ============================================
+# 3. Копируем сертификат в папку с проектом для подстановки в доверенные на хосте
+# ============================================
+- name: Fetch sert
+  fetch:
+    src: "{{ devpi_cert_dir }}/devpi.crt"
+    dest: ../devpi.crt
+    flat: yes
+
+# ============================================
+# 4. Читаем сертификаты с удалённого хоста для создания секрета
+# ============================================
+- name: Read certificate from remote node
+  slurp:
+    src: "{{ devpi_cert_dir }}/devpi.crt"
+  register: devpi_crt
+
+- name: Read private key from remote node
+  slurp:
+    src: "{{ devpi_cert_dir }}/devpi.key"
+  register: devpi_key
+
+# ============================================
+# 5. Создаём Kubernetes Secret с TLS-сертификатом
+# ============================================
+- name: Create TLS secret in k3s
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ devpi_namespace }}"
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ devpi_tls_name }}"
+        namespace: "{{ devpi_namespace }}"
+      type: kubernetes.io/tls
+      data:
+        tls.crt: "{{ devpi_crt.content }}"
+        tls.key: "{{ devpi_key.content }}"
+    kubeconfig: /home/{{ user }}/.kube/config
+
+# ============================================
+# 6. Настраиваем pip.conf для работы с devpi
+# ============================================
+- name: Configure pip to use devpi
+  template:
+    src: pip.conf.j2
+    dest: "{{ pip_conf_path }}"
+    owner: root
+    group: root
+    mode: '0644'

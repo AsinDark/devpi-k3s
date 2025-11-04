@@ -1,0 +1,10 @@
+- name: Setup k3s cluster
+  hosts: k3s
+  become: true
+  roles:
+    - prepare
+    - k3s_install
+    - helm_install
+    - devpi_namespace
+    - devpi_tls
+    - devpi_helm

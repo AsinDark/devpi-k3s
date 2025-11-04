@@ -1,0 +1,42 @@
+replicaCount: 1
+
+image:
+  repository: muccg/devpi
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  DEVPI_PASSWORD: "changemetoyourlongsecret"
+
+service:
+  type: ClusterIP
+  port: 3141
+  portName: http
+
+persistence:
+  storageClass: "local-path"   # стандартный для k3s
+  accessMode: ReadWriteOnce
+  size: 5Gi
+
+resources: {}
+# resources:
+#   requests:
+#     cpu: 0
+#     memory: 0
+#   limits:
+#     cpu: 1500m
+#     memory: 3072Mi
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  host: devpi.local
+  path: /
+  tls:
+    enabled: true
+    secretName: devpi-tls
+    create: false           
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

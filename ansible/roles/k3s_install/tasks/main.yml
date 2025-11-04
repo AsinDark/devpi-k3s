@@ -1,0 +1,30 @@
+- name: Install k3s
+  shell: |
+    curl -sfL https://get.k3s.io | sh -
+  args:
+    creates: /usr/local/bin/k3s
+
+- name: Create .kube directory
+  ansible.builtin.file:
+    path: "/home/{{ user }}/.kube"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: '0755'
+
+- name: Copy k3s config file and set permissions
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "/home/{{ user }}/.kube/config"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: '0600'
+    remote_src: true
+
+- name: Add KUBECONFIG export to user's .bashrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ user }}/.bashrc"
+    line: 'export KUBECONFIG=/home/{{ user }}/.kube/config'
+    create: true
+    insertafter: EOF
+    state: present

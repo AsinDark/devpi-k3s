@@ -1,0 +1,4 @@
+devpi_domain: devpi.local
+devpi_cert_days: 365
+devpi_cert_dir: /etc/devpi
+pip_conf_path: /etc/pip.conf

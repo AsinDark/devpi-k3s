@@ -1,0 +1,6 @@
+apiVersion: v2
+name: devpi
+description: Devpi PyPI server for k3s
+type: application
+version: 0.1.0
+appVersion: "latest"

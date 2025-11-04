@@ -1,0 +1,5 @@
+user: vagrant
+group: vagrant
+devpi_namespace: devpi
+devpi_tls_name: devpi-tls
+virtualbox_ip: 192.168.56.11

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "devpi.fullname" . }}-statefulset
+  labels:
+    app: {{ include "devpi.fullname" . }}-label
+spec:
+  serviceName: {{ include "devpi.fullname" . }}-service
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "devpi.fullname" . }}-label
+  template:
+    metadata:
+      labels:
+        app: {{ include "devpi.fullname" . }}-label
+    spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      containers:
+        - name: {{ include "devpi.fullname" . }}-container
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: {{ .Values.service.portName }}
+          env:
+            - name: DEVPI_SERVERDIR
+              value: /data/{{ include "devpi.fullname" . }}
+            - name: DEVPI_PASSWORD
+              value: {{ .Values.env.DEVPI_PASSWORD | quote }}
+          volumeMounts:
+            - name: {{ include "devpi.fullname" . }}-data
+              mountPath: /data/{{ include "devpi.fullname" . }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.portName }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.portName }}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ include "devpi.fullname" . }}-data
+    spec:
+      accessModes:
+        - {{ .Values.persistence.accessMode }}
+      storageClassName: {{ .Values.persistence.storageClass | quote }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
