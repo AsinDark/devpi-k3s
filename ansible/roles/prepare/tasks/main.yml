@@ -13,15 +13,27 @@
   shell: |
     ufw disable
 
-- name: Ensure DNSStubListener=no is set in resolved.conf
-  lineinfile:
-    path: /etc/systemd/resolved.conf
-    line: DNSStubListener=no
-    insertafter: EOF
-  register: config_changed
-
-- name: Restart systemd-resolved service if configuration changed
+- name: Stop systemd-resolved service
   systemd:
-    name: systemd-resolved         
-    state: restarted              
-  when: config_changed.changed
+    name: systemd-resolved
+    state: stopped
+
+- name: Disable systemd-resolved service
+  systemd:
+    name: systemd-resolved
+    enabled: false
+
+- name: Remove /etc/resolv.conf symlink or file
+  file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Create new /etc/resolv.conf with custom DNS servers
+  copy:
+    dest: /etc/resolv.conf
+    content: |
+          nameserver 8.8.8.8
+          nameserver 1.1.1.1
+    owner: root
+    group: root
+    mode: '0644'

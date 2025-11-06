@@ -1,26 +1,22 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "devpi.fullname" . }}-statefulset
+  name: {{ include "devpi.fullname" . }}
   labels:
-    app: {{ include "devpi.fullname" . }}-label
+    {{- include "devpi.labels" . | nindent 4 }}
 spec:
-  serviceName: {{ include "devpi.fullname" . }}-service
+  serviceName: {{ include "devpi.fullname" . }}
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "devpi.fullname" . }}-label
+      {{- include "devpi.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ include "devpi.fullname" . }}-label
+        {{- include "devpi.selectorLabels" . | nindent 8 }}
     spec:
-      dnsConfig:
-        options:
-          - name: ndots
-            value: "1"
       containers:
-        - name: {{ include "devpi.fullname" . }}-container
+        - name: {{ include "devpi.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -28,12 +24,15 @@ spec:
               name: {{ .Values.service.portName }}
           env:
             - name: DEVPI_SERVERDIR
-              value: /data/{{ include "devpi.fullname" . }}
+              value: /data/devpi
             - name: DEVPI_PASSWORD
-              value: {{ .Values.env.DEVPI_PASSWORD | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: {{ .Values.secret.key }}
           volumeMounts:
-            - name: {{ include "devpi.fullname" . }}-data
-              mountPath: /data/{{ include "devpi.fullname" . }}
+            - name: data
+              mountPath: /data/devpi
           readinessProbe:
             httpGet:
               path: /
@@ -50,7 +49,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
   volumeClaimTemplates:
   - metadata:
-      name: {{ include "devpi.fullname" . }}-data
+      name: data
     spec:
       accessModes:
         - {{ .Values.persistence.accessMode }}

@@ -2,10 +2,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "devpi.fullname" . }}-ingress
-  annotations:
-    kubernetes.io/ingress.class: {{ .Values.ingress.ingressClassName | quote }}
+  name: {{ include "devpi.fullname" . }}
+  labels:
+    {{- include "devpi.labels" . | nindent 4 }}
 spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName | quote }}
   {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
@@ -20,7 +21,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "devpi.fullname" . }}-service
+                name: {{ include "devpi.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}
 {{- end }}

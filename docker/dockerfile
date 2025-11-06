@@ -1,0 +1,31 @@
+FROM python:3.12.3-slim
+
+ENV DEVPI_SERVER_VERSION=6.17.0
+ENV DEVPI_WEB_VERSION=5.0
+ENV DEVPI_CLIENT_VERSION=7.2.0
+ENV DEVPI_SERVERDIR=/data/devpi
+ENV DEVPI_PORT=3141
+
+# Установка зависимостей
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl tini \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка devpi-server и web UI
+RUN pip install --no-cache-dir \
+        "devpi-server==${DEVPI_SERVER_VERSION}" \
+        "devpi-web==${DEVPI_WEB_VERSION}" \
+        "devpi-client==${DEVPI_CLIENT_VERSION}"
+
+# Создание рабочей директории
+RUN mkdir -p ${DEVPI_SERVERDIR}
+VOLUME ${DEVPI_SERVERDIR}
+WORKDIR ${DEVPI_SERVERDIR}
+
+# Копируем entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE ${DEVPI_PORT}
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]

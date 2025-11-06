@@ -1,12 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: muccg/devpi
-  tag: latest
+  repository: asindark/devpi
+  tag: 1.0.0
   pullPolicy: IfNotPresent
-
-env:
-  DEVPI_PASSWORD: "changemetoyourlongsecret"
 
 service:
   type: ClusterIP
@@ -14,7 +11,7 @@ service:
   portName: http
 
 persistence:
-  storageClass: "local-path"   # стандартный для k3s
+  storageClass: "local-path"
   accessMode: ReadWriteOnce
   size: 5Gi
 
@@ -35,7 +32,11 @@ ingress:
   tls:
     enabled: true
     secretName: devpi-tls
-    create: false           
+    create: false  
+
+secret:
+  name: devpi-pwd
+  key: password         
 
 nodeSelector: {}
 tolerations: []

@@ -7,4 +7,5 @@
     - helm_install
     - devpi_namespace
     - devpi_tls
+    - devpi_pass
     - devpi_helm

@@ -1,0 +1,12 @@
+- name: Create pwd for Devpi
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: devpi-pwd
+        namespace: devpi
+      type: Opaque
+      data:
+        password: "{{ devpi_password | b64encode }}"
